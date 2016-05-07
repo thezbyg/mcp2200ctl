@@ -8,6 +8,7 @@ mark_as_advanced(GIT_EXECUTABLE)
 find_file(GITDIR NAMES .git PATHS ${CMAKE_SOURCE_DIR} NO_DEFAULT_PATH)
 find_file(VERSION_FILE NAMES version.cpp PATHS ${CMAKE_SOURCE_DIR}/cmake/ NO_DEFAULT_PATH)
 
+set(GENERATE_VERSION true)
 if (GIT_EXECUTABLE AND GITDIR)
 	execute_process(COMMAND
 		"${GIT_EXECUTABLE}" describe "--match=v*" --always
@@ -17,12 +18,15 @@ if (GIT_EXECUTABLE AND GITDIR)
 	)
 elseif (VERSION_FILE)
 	list(APPEND SOURCES "${VERSION_FILE}")
+	set(GENERATE_VERSION false)
 else()
-	set(VERSION_INFO "v0.0")
+	set(VERSION_INFO "v0.0.0")
 endif()
 
+if (GENERATE_VERSION)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/version.cpp" @ONLY)
 list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/version.cpp")
+endif()
 
 add_executable(mcp2200ctl ${SOURCES})
 target_compile_options(mcp2200ctl PUBLIC -std=c++11 -Wall -Wfloat-conversion)
