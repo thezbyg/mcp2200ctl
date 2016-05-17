@@ -25,5 +25,5 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "version.h"
 namespace version
 {
-	const char *version = "v1.0.1";
+	const char *version = "v1.0.2";
 }
