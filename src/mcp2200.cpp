@@ -31,6 +31,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace std;
 namespace mcp2200
 {
+	enum class AltPin: uint8_t
+	{
+		tx_led = 2,
+		rx_led = 3,
+		usb_configure = 6,
+		usb_suspend = 7,
+	};
+	enum class AltPinOption: uint8_t
+	{
+		hardware_flow = 0,
+		invert = 1,
+		blink_speed = 5,
+		tx_toggle = 6,
+		rx_toggle = 7,
+	};
+	enum class GpioPin: uint8_t
+	{
+		usb_suspend = 0,
+		usb_configure = 1,
+		rx_led = 6,
+		tx_led = 7,
+	};
+	enum class GpioMask: uint8_t
+	{
+		none = 0,
+		usb_suspend = 1 << static_cast<uint8_t>(GpioPin::usb_suspend),
+		usb_configure = 1 << static_cast<uint8_t>(GpioPin::usb_configure),
+		rx_led = 1 << static_cast<uint8_t>(GpioPin::rx_led),
+		tx_led = 1 << static_cast<uint8_t>(GpioPin::tx_led),
+	};
+	const static int hid_report_size = 16;
+	inline GpioMask operator|(const GpioMask& a, const GpioMask &b)
+	{
+		return static_cast<GpioMask>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
+	}
 	inline void setBit(uint8_t &x, int bit, bool value)
 	{
 		if (value)
@@ -41,6 +76,30 @@ namespace mcp2200
 	inline bool getBit(const uint8_t x, int bit)
 	{
 		return ((x >> bit) & 1) == 1;
+	}
+	inline void setBit(uint8_t &x, AltPin alt_pin, bool value)
+	{
+		setBit(x, static_cast<uint8_t>(alt_pin), value);
+	}
+	inline bool getBit(const uint8_t x, AltPin alt_pin)
+	{
+		return getBit(x, static_cast<uint8_t>(alt_pin));
+	}
+	inline void setBit(uint8_t &x, AltPinOption alt_pin_option, bool value)
+	{
+		setBit(x, static_cast<uint8_t>(alt_pin_option), value);
+	}
+	inline bool getBit(const uint8_t x, AltPinOption alt_pin_option)
+	{
+		return getBit(x, static_cast<uint8_t>(alt_pin_option));
+	}
+	inline void setBit(uint8_t &x, GpioPin gpio_pin, bool value)
+	{
+		setBit(x, static_cast<uint8_t>(gpio_pin), value);
+	}
+	inline bool getBit(const uint8_t x, GpioPin gpio_pin)
+	{
+		return getBit(x, static_cast<uint8_t>(gpio_pin));
 	}
 	template <typename T>
 	void fromUtf8(const string& source, basic_string<T, char_traits<T>, allocator<T>>& result)
@@ -54,7 +113,6 @@ namespace mcp2200
 		wstring_convert<codecvt_utf8_utf16<T>, T> convertor;
 		result = convertor.to_bytes(source);
 	}
-	const static int hid_report_size = 16;
 	Command::Command()
 	{
 		memset(this, 0, sizeof(Command));
@@ -106,46 +164,46 @@ namespace mcp2200
 	}
 	void Command::configureRxLed(bool enable, bool toggle)
 	{
-		setBit(configure.alt_pins, 3, enable);
-		setBit(configure.alt_pin_options, 7, toggle);
+		setBit(configure.alt_pins, AltPin::rx_led, enable);
+		setBit(configure.alt_pin_options, AltPinOption::rx_toggle, toggle);
 	}
 	void Command::configureTxLed(bool enable, bool toggle)
 	{
-		setBit(configure.alt_pins, 2, enable);
-		setBit(configure.alt_pin_options, 6, toggle);
+		setBit(configure.alt_pins, AltPin::tx_led, enable);
+		setBit(configure.alt_pin_options, AltPinOption::tx_toggle, toggle);
 	}
 	LedMode Command::getRxLedMode() const
 	{
-		if (getBit(read_all_response.alt_pins, 2)){
-			if (getBit(read_all_response.alt_pin_options, 6)){
+		if (getBit(read_all_response.alt_pins, AltPin::rx_led)){
+			if (getBit(read_all_response.alt_pin_options, AltPinOption::rx_toggle)){
 				return LedMode::toggle;
 			}else{
 				return LedMode::blink;
 			}
 		}else{
-			return getBit(read_all_response.default_values, 6) ? LedMode::on : LedMode::off;
+			return getBit(read_all_response.default_values, GpioPin::rx_led) ? LedMode::on : LedMode::off;
 		}
 	}
 	void Command::setBlinkSpeed(bool slow)
 	{
-		setBit(configure.alt_pin_options, 5, slow);
+		setBit(configure.alt_pin_options, AltPinOption::blink_speed, slow);
 	}
 	bool Command::getBlinkSpeed() const
 	{
-		return getBit(read_all_response.alt_pin_options, 5);
+		return getBit(read_all_response.alt_pin_options, AltPinOption::blink_speed);
 	}
 	Command &Command::setRxLedMode(LedMode led_mode)
 	{
 		switch (led_mode){
 			case LedMode::off:
 				configureRxLed(false, false);
-				setBit(configure.io_directions, 6, false);
-				setBit(configure.default_values, 6, false);
+				setBit(configure.io_directions, GpioPin::rx_led, false);
+				setBit(configure.default_values, GpioPin::rx_led, false);
 				break;
 			case LedMode::on:
 				configureRxLed(false, false);
-				setBit(configure.io_directions, 6, false);
-				setBit(configure.default_values, 6, true);
+				setBit(configure.io_directions, GpioPin::rx_led, false);
+				setBit(configure.default_values, GpioPin::rx_led, true);
 				break;
 			case LedMode::blink:
 				configureRxLed(true, false);
@@ -158,14 +216,14 @@ namespace mcp2200
 	}
 	LedMode Command::getTxLedMode() const
 	{
-		if (getBit(read_all_response.alt_pins, 3)){
-			if (getBit(read_all_response.alt_pin_options, 6)){
+		if (getBit(read_all_response.alt_pins, AltPin::tx_led)){
+			if (getBit(read_all_response.alt_pin_options, AltPinOption::tx_toggle)){
 				return LedMode::toggle;
 			}else{
 				return LedMode::blink;
 			}
 		}else{
-			return getBit(read_all_response.default_values, 7) ? LedMode::on : LedMode::off;
+			return getBit(read_all_response.default_values, GpioPin::tx_led) ? LedMode::on : LedMode::off;
 		}
 	}
 	Command &Command::setTxLedMode(LedMode led_mode)
@@ -173,13 +231,13 @@ namespace mcp2200
 		switch (led_mode){
 			case LedMode::off:
 				configureTxLed(false, false);
-				setBit(configure.io_directions, 7, false);
-				setBit(configure.default_values, 7, false);
+				setBit(configure.io_directions, GpioPin::tx_led, false);
+				setBit(configure.default_values, GpioPin::tx_led, false);
 				break;
 			case LedMode::on:
 				configureTxLed(false, false);
-				setBit(configure.io_directions, 7, false);
-				setBit(configure.default_values, 7, true);
+				setBit(configure.io_directions, GpioPin::tx_led, false);
+				setBit(configure.default_values, GpioPin::tx_led, true);
 				break;
 			case LedMode::blink:
 				configureTxLed(true, false);
@@ -192,39 +250,39 @@ namespace mcp2200
 	}
 	Command &Command::setSuspend(bool suspend)
 	{
-		setBit(configure.alt_pins, 7, suspend);
+		setBit(configure.alt_pins, AltPin::usb_suspend, suspend);
 		return *this;
 	}
 	Command &Command::setUsbConfigure(bool usb_configure)
 	{
-		setBit(configure.alt_pins, 6, usb_configure);
+		setBit(configure.alt_pins, AltPin::usb_configure, usb_configure);
 		return *this;
 	}
 	Command &Command::setFlowControl(bool flow_control)
 	{
-		setBit(configure.alt_pin_options, 0, flow_control);
+		setBit(configure.alt_pin_options, AltPinOption::hardware_flow, flow_control);
 		return *this;
 	}
 	Command &Command::setInvert(bool invert)
 	{
-		setBit(configure.alt_pin_options, 1, invert);
+		setBit(configure.alt_pin_options, AltPinOption::invert, invert);
 		return *this;
 	}
 	bool Command::getInvert() const
 	{
-		return getBit(read_all_response.alt_pin_options, 1);
+		return getBit(read_all_response.alt_pin_options, AltPinOption::invert);
 	}
 	bool Command::getFlowControl() const
 	{
-		return getBit(read_all_response.alt_pin_options, 0);
+		return getBit(read_all_response.alt_pin_options, AltPinOption::hardware_flow);
 	}
 	bool Command::getSuspend() const
 	{
-		return getBit(read_all_response.alt_pins, 7);
+		return getBit(read_all_response.alt_pins, AltPin::usb_suspend);
 	}
 	bool Command::getUsbConfigure() const
 	{
-		return getBit(read_all_response.alt_pins, 6);
+		return getBit(read_all_response.alt_pins, AltPin::usb_configure);
 	}
 	uint8_t Command::getGpioValues() const
 	{
@@ -276,7 +334,7 @@ namespace mcp2200
 	}
 	uint8_t Command::getIoMask() const
 	{
-		return ~((getSuspend() ? 1 << 0 : 0) | (getUsbConfigure() ? 1 << 1 : 0) | (isAlternativeSet(getRxLedMode()) ? 1 << 6 : 0) | (isAlternativeSet(getTxLedMode()) ? 1 << 7 : 0));
+		return ~static_cast<uint8_t>((getSuspend() ? GpioMask::usb_suspend : GpioMask::none | (getUsbConfigure() ? GpioMask::usb_configure : GpioMask::none) | (isAlternativeSet(getRxLedMode()) ? GpioMask::rx_led : GpioMask::none) | (isAlternativeSet(getTxLedMode()) ? GpioMask::tx_led : GpioMask::none)));
 	}
 	DeviceInformation::DeviceInformation()
 	{
