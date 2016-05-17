@@ -66,7 +66,7 @@ namespace command_line
 		m_target.addOptions(options, hidden_options);
 		options.add_options()
 			("direction,d", po::value<BitMap<uint8_t>>(&m_direction), "GPIO directions (use i and o symbols)")
-			("default,D", po::value<BitMap<uint8_t>>(&m_default), "default GPIO values")
+			("default,g", po::value<BitMap<uint8_t>>(&m_default), "default GPIO values")
 			("rxled,r", po::value<mcp2200::LedMode>(&m_rx_led), "receive LED mode")
 			("txled,t", po::value<mcp2200::LedMode>(&m_tx_led), "transmit LED mode")
 			("blink,b", po::value<bool>(&m_blink_speed), "enable fast blink")
