@@ -51,6 +51,23 @@ namespace command_line
 {
 	const static char *program_name = "mcp2200ctl";
 	const static char *program_description = "mcp2200ctl - MCP2200 control and query program";
+	struct HelpCommand: public Command
+	{
+		Program *m_program;
+		HelpCommand(Program *program):
+			Command("help", "print this help message"),
+			m_program(program)
+		{
+		}
+		virtual ~HelpCommand()
+		{
+		}
+		virtual bool run()
+		{
+			m_program->printHelp();
+			return true;
+		}
+	};
 	Program::Program()
 	{
 		addCommand(make_shared<ListCommand>());
@@ -60,6 +77,7 @@ namespace command_line
 		addCommand(make_shared<DescribeCommand>());
 		addCommand(make_shared<GetEepromCommand>());
 		addCommand(make_shared<SetEepromCommand>());
+		addCommand(make_shared<HelpCommand>(this));
 	}
 	void Program::addCommand(shared_ptr<Command> command)
 	{

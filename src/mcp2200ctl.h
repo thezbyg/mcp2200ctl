@@ -34,6 +34,7 @@ namespace command_line
 	{
 		Program();
 		int run(int argc, char **argv);
+		void printHelp();
 		private:
 		typedef std::pair<std::string, std::shared_ptr<Command>> CommandPair;
 		void addGlobalOptions(boost::program_options::options_description &options);
@@ -41,7 +42,6 @@ namespace command_line
 		std::shared_ptr<Command> findCommand(const char *name);
 		std::pair<bool, std::string> getCommandName(const std::vector<std::string> &command_line);
 		void printHelp(Command &command);
-		void printHelp();
 		bool m_version;
 		std::map<std::string, std::shared_ptr<Command>> m_command_map;
 	};
