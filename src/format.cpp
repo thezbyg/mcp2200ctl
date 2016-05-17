@@ -52,8 +52,8 @@ namespace command_line
 	{
 		stream << "Default baud rate: " << response.getBaudRate() << "\n"
 			<< "GPIO directions: " << BitMap<uint8_t>(response.getIoDirections(), 'o', 'i') << "\n"
-			<< "GPIO default values: " << BitMap<uint8_t>(response.getDefaultValues()) << "\n"
-			<< "GPIO values: " << BitMap<uint8_t>(response.getGpioValues()) << "\n"
+			<< "GPIO default values: " << BitMap<uint8_t>(response.getDefaultValues()) << " (mask " << BitMap<uint8_t>(response.getIoMask()) << ")\n"
+			<< "GPIO values: " << BitMap<uint8_t>(response.getGpioValues()) << " (mask " << BitMap<uint8_t>(response.getIoMask()) << ")\n"
 			<< "RX LED (GPIO pin 6): " << response.getRxLedMode() << "\n"
 			<< "TX LED (GPIO pin 7): " << response.getTxLedMode() << "\n"
 			<< "Blink speed: " << (response.getBlinkSpeed() ? "slow" : "fast") << "\n"
