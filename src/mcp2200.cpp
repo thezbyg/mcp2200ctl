@@ -334,7 +334,12 @@ namespace mcp2200
 	}
 	uint8_t Command::getIoMask() const
 	{
-		return ~static_cast<uint8_t>((getSuspend() ? GpioMask::usb_suspend : GpioMask::none | (getUsbConfigure() ? GpioMask::usb_configure : GpioMask::none) | (isAlternativeSet(getRxLedMode()) ? GpioMask::rx_led : GpioMask::none) | (isAlternativeSet(getTxLedMode()) ? GpioMask::tx_led : GpioMask::none)));
+		return ~static_cast<uint8_t>(
+			(getSuspend() ? GpioMask::usb_suspend : GpioMask::none) |
+			(getUsbConfigure() ? GpioMask::usb_configure : GpioMask::none) |
+			(isAlternativeSet(getRxLedMode()) ? GpioMask::rx_led : GpioMask::none) |
+			(isAlternativeSet(getTxLedMode()) ? GpioMask::tx_led : GpioMask::none)
+		);
 	}
 	DeviceInformation::DeviceInformation()
 	{
