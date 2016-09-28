@@ -137,8 +137,6 @@ namespace mcp2200
 		Command &setDefaultValues(uint8_t default_values);
 		void configureRxLed(bool enable, bool toggle);
 		void configureTxLed(bool enable, bool toggle);
-		void setBlinkSpeed(bool slow);
-		bool getBlinkSpeed() const;
 		LedMode getRxLedMode() const;
 		Command &setRxLedMode(LedMode led_mode);
 		LedMode getTxLedMode() const;
@@ -147,10 +145,12 @@ namespace mcp2200
 		Command &setUsbConfigure(bool usb_configure);
 		Command &setFlowControl(bool flow_control);
 		Command &setInvert(bool invert);
+		Command &setBlinkSpeed(bool slow);
 		bool getInvert() const;
 		bool getFlowControl() const;
 		bool getSuspend() const;
 		bool getUsbConfigure() const;
+		bool getBlinkSpeed() const;
 		uint8_t getGpioValues() const;
 		Command &setGpioValues(uint8_t set, uint8_t clear);
 		Command &setEepromAddress(uint8_t address);
@@ -207,9 +207,11 @@ namespace mcp2200
 		bool setProduct(const char *value);
 		bool setVendorProductIds(uint16_t vendor_id, uint16_t product_id);
 		bool setString(ConfigurationType type, const char *value);
+		void setReadTimeout(int timeout);
 		private:
 		hid_device *m_handle;
 		std::vector<DeviceInformation> m_found;
+		int m_timeout;
 	};
 };
 #endif /* HEADER_MCP2200_H_ */

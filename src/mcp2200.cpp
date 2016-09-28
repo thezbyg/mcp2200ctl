@@ -184,9 +184,10 @@ namespace mcp2200
 			return getBit(read_all_response.default_values, GpioPin::rx_led) ? LedMode::on : LedMode::off;
 		}
 	}
-	void Command::setBlinkSpeed(bool slow)
+	Command &Command::setBlinkSpeed(bool slow)
 	{
 		setBit(configure.alt_pin_options, AltPinOption::blink_speed, slow);
+		return *this;
 	}
 	bool Command::getBlinkSpeed() const
 	{
@@ -385,7 +386,8 @@ namespace mcp2200
 		return true;
 	}
 	Device::Device():
-		m_handle(nullptr)
+		m_handle(nullptr),
+		m_timeout(-1)
 	{
 	}
 	Device::~Device()
@@ -502,9 +504,17 @@ namespace mcp2200
 		if (hid_write(m_handle, command.getPointer(), command.length()) < 0) return false;
 		return true;
 	}
+	void Device::setReadTimeout(int timeout)
+	{
+		m_timeout = timeout;
+	}
 	bool Device::read(Command &response)
 	{
-		if (hid_read(m_handle, response.getPointer(), response.length()) < 0) return false;
+		if (m_timeout != -1){
+			if (hid_read_timeout(m_handle, response.getPointer(), response.length(), m_timeout) < 0) return false;
+		}else{
+			if (hid_read(m_handle, response.getPointer(), response.length()) < 0) return false;
+		}
 		return true;
 	}
 	bool Device::readAll(Command &response)
