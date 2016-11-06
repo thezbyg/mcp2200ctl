@@ -24,15 +24,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "mcp2200gui.h"
 #include "mcp2200.h"
+#include "paths.h"
+#include "mapping.h"
 #include "udev/udev.h"
 #include <gtk/gtk.h>
+#include <json/json.h>
 #include <type_traits>
 #include <cstddef>
 #include <thread>
 #include <mutex>
+#include <iomanip>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 int adm_monitor();
 using namespace std;
+namespace fs = boost::filesystem;
 namespace gui
 {
 	enum class DeviceColumn: int
@@ -49,6 +56,45 @@ namespace gui
 		static_assert(is_enum<enumeration>::value, "Not an enum");
 		return static_cast<size_t>(value);
 	}
+	struct Uint16HexValue: public mapping::Value<uint16_t>
+	{
+		uint16_t default_value;
+		Uint16HexValue(const char *name, size_t offset, const uint16_t &default_value = 0):
+			Value(name, offset, "uint16_hex"),
+			default_value(default_value)
+		{
+		}
+		virtual ~Uint16HexValue() {}
+		virtual void setDefault(void *object) const
+		{
+			*this->getValuePointer(object) = default_value;
+		}
+	};
+	struct Uint16HexAdapter: public mapping::Adapter<Json::Value>
+	{
+		Uint16HexAdapter(): Adapter("uint16_hex") {}
+		virtual ~Uint16HexAdapter() {};
+		virtual void save(const void *object, const mapping::BaseValue &value, Json::Value &output)
+		{
+			stringstream s;
+			s << setfill('0') << hex << setw(4) << value.get<uint16_t>(object);
+			output[value.getName()] = s.str();
+		};
+		virtual void load(void *object, const mapping::BaseValue &value, const Json::Value &input)
+		{
+			auto &name = value.getName();
+			if (input.isMember(name) && input[name].isConvertibleTo(Json::stringValue)){
+				stringstream s(input[name].asString());
+				uint16_t v;
+				s >> hex >> v;
+				value.set<uint16_t>(object, static_cast<const uint16_t&>(v));
+			}else if (input.isMember(name) && input[name].isConvertibleTo(Json::intValue)){
+				value.set<uint16_t>(object, input[name].asInt());
+			}else{
+				value.setDefault(object);
+			}
+		};
+	};
 	struct Program::Impl
 	{
 		Program *m_decl;
@@ -60,17 +106,81 @@ namespace gui
 			GtkWidget *value, *input, *output, *default_value;
 		};
 		Gpio m_gpio[8];
+		GtkWidget *m_vid, *m_pid;
 		GDBusObjectManager *m_manager;
 		thread m_usb_event_thread;
 		string m_current_device;
+		struct Configuration
+		{
+			uint16_t vid, pid;
+		}m_configuration;
+		Json::Value m_configuration_json;
+		mapping::Layout m_configuration_layout;
 		bool m_closing;
 		mutex m_before_close_mutex;
 		function<void()> m_before_close;
 		Impl(Program *decl):
 			m_decl(decl),
 			m_manager(nullptr),
+			m_configuration_layout("Configuration"),
 			m_closing(false)
 		{
+			m_configuration_layout
+				(new Uint16HexValue("vid", offsetof(Configuration, vid), mcp2200::defaultVendorId))
+				(new Uint16HexValue("pid", offsetof(Configuration, pid), mcp2200::defaultProductId));
+			loadConfiguration();
+		}
+		fs::path getConfigurationPath()
+		{
+			auto config_path = paths::getConfigurationPath() / "mcp2200gui";
+			boost::system::error_code ec;
+			if (!fs::exists(config_path, ec)){
+				fs::create_directory(config_path, ec);
+			}
+			return config_path;
+		}
+		bool loadConfiguration()
+		{
+			using namespace mapping;
+			ReaderWriter<Json::Value> reader;
+			reader
+				(new Uint16HexAdapter());
+			fs::path config_path;
+			try{
+				config_path = getConfigurationPath() / "configuration.json";
+			}catch(const exception &e){
+				reader.load(m_configuration_layout, m_configuration_json, &m_configuration);
+				return false;
+			}
+			ifstream file(config_path.string(), ifstream::binary);
+			if (file.is_open()){
+				Json::Reader json_reader;
+				json_reader.parse(file, m_configuration_json, false);
+				file.close();
+			}
+			reader.load(m_configuration_layout, m_configuration_json, &m_configuration);
+			return true;
+		}
+		bool saveConfiguration()
+		{
+			using namespace mapping;
+			fs::path config_path;
+			try{
+				config_path = getConfigurationPath() / "configuration.json";
+			}catch(const exception &e){
+				return false;
+			}
+			ReaderWriter<Json::Value> writer;
+			writer
+				(new Uint16HexAdapter());
+			writer.save(m_configuration_layout, &m_configuration, m_configuration_json);
+			ofstream file(config_path.string());
+			if (file.is_open()){
+				Json::StyledWriter styled_writer;
+				file << styled_writer.write(m_configuration_json);
+				file.close();
+			}
+			return true;
 		}
 		void beforeDestroy()
 		{
@@ -81,6 +191,7 @@ namespace gui
 					m_before_close();
 			}
 			m_usb_event_thread.join();
+			saveConfiguration();
 		}
 		static void onDestroy(GtkWidget *, Impl *app)
 		{
@@ -174,7 +285,7 @@ namespace gui
 		void showDevices()
 		{
 			mcp2200::Device device;
-			if (device.find()){
+			if (device.find(m_configuration.vid, m_configuration.pid)){
 				clearDevices();
 				for (size_t i = 0; i < device.getCount(); i++){
 					addDevice(device[i]);
@@ -391,6 +502,43 @@ namespace gui
 			if (label_widget)
 				*label_widget = widget;
 		}
+		void addEntry(GtkWidget *grid, int position, int column, const char *value, GtkWidget **entry_widget = nullptr, bool expand = true, bool center = false)
+		{
+			GtkWidget *widget = gtk_entry_new();
+			if (value)
+				gtk_entry_set_text(GTK_ENTRY(widget), value);
+			if (expand)
+				gtk_widget_set_hexpand(widget, true);
+			if (center)
+				gtk_widget_set_halign(widget, GTK_ALIGN_CENTER);
+			gtk_grid_attach(GTK_GRID(grid), widget, column * 2, position, 2, 1);
+			if (entry_widget)
+				*entry_widget = widget;
+		}
+		string toHexString(uint16_t value)
+		{
+			stringstream s;
+			s << setfill('0') << hex << setw(4) << value;
+			return s.str();
+		}
+		uint16_t toUint16(const string &value)
+		{
+			stringstream s(value);
+			uint16_t result;
+			s >> hex >> result;
+			return result;
+		}
+		GtkWidget *addPageWithGrid(const char *label)
+		{
+			GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+			setMargins(vbox);
+			gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), vbox, gtk_label_new(label));
+			GtkWidget *grid = gtk_grid_new();
+			gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
+			gtk_grid_set_row_spacing(GTK_GRID(grid), 2);
+			gtk_box_pack_start(GTK_BOX(vbox), grid, false, true, 10);
+			return grid;
+		}
 		int run(int argc, char **argv)
 		{
 			gtk_init(nullptr, nullptr);
@@ -403,14 +551,11 @@ namespace gui
 			createMainMenu();
 			gtk_box_pack_start(GTK_BOX(vbox_main), m_menu, false, false, 0);
 			m_notebook = gtk_notebook_new();
-			GtkWidget *vbox = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
-			setMargins(vbox);
-			gtk_notebook_append_page(GTK_NOTEBOOK(m_notebook), vbox, gtk_label_new("Properties"));
+
+			GtkWidget *grid = addPageWithGrid("Properties");
+			GtkWidget *vbox = gtk_widget_get_parent(grid);
 			gtk_box_pack_start(GTK_BOX(vbox), createDeviceList(&m_device_list), true, true, 0);
-			GtkWidget *grid = gtk_grid_new();
-			gtk_grid_set_column_spacing(GTK_GRID(grid), 10);
-			gtk_grid_set_row_spacing(GTK_GRID(grid), 2);
-			gtk_box_pack_start(GTK_BOX(vbox), grid, false, false, 10);
+			gtk_box_reorder_child(GTK_BOX(vbox), grid, 1);
 
 			addLabel(grid, 0, 0, "Options");
 			addCheckbox(grid, 1, 0, "Invert", &m_invert, true, false, onChange);
@@ -463,6 +608,25 @@ namespace gui
 			g_signal_connect(refresh, "clicked", G_CALLBACK(onRefresh), this);
 			gtk_box_pack_start(GTK_BOX(hbox), refresh, false, false, 0);
 
+			grid = addPageWithGrid("Configuration");
+			gtk_widget_set_vexpand(grid, true);
+			vbox = gtk_widget_get_parent(grid);
+			string vid = toHexString(m_configuration.vid);
+			string pid = toHexString(m_configuration.pid);
+
+			addLabel(grid, 0, 0, "Vendor ID", nullptr, false);
+			addEntry(grid, 0, 1, vid.c_str(), &m_vid, false);
+			addLabel(grid, 1, 0, "Product ID", nullptr, false);
+			addEntry(grid, 1, 1, pid.c_str(), &m_pid, false);
+
+			hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+			gtk_box_pack_start(GTK_BOX(vbox), hbox, false, true, 0);
+			gtk_widget_set_halign(hbox, GTK_ALIGN_END);
+
+			apply = gtk_button_new_with_label("Apply");
+			g_signal_connect(apply, "clicked", G_CALLBACK(onConfigurationApply), this);
+			gtk_box_pack_start(GTK_BOX(hbox), apply, false, false, 0);
+
 			gtk_box_pack_start(GTK_BOX(vbox_main), m_notebook, true, true, 0);
 
 			m_usb_event_thread = thread(&Impl::waitForUsbEvents, this);
@@ -472,6 +636,12 @@ namespace gui
 			gtk_widget_show(m_window);
 			gtk_main();
 			return 0;
+		}
+		void applyConfiguration()
+		{
+			m_configuration.vid = toUint16(gtk_entry_get_text(GTK_ENTRY(m_vid)));
+			m_configuration.pid = toUint16(gtk_entry_get_text(GTK_ENTRY(m_pid)));
+			showDevices();
 		}
 		static gboolean onDeleteEvent(GtkWidget *, GdkEvent *, Program *)
 		{
@@ -536,6 +706,10 @@ namespace gui
 		static void onChange(GtkWidget *, Impl *app)
 		{
 			app->getGpioMask();
+		}
+		static void onConfigurationApply(GtkWidget *, Impl *app)
+		{
+			app->applyConfiguration();
 		}
 	};
 	Program::Program()

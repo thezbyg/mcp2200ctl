@@ -172,17 +172,17 @@ namespace mcp2200
 		std::string product;
 		uint16_t release_number;
 	};
+	const static uint16_t defaultVendorId = 0x04d8;
+	const static uint16_t defaultProductId = 0x00df;
 	struct Device
 	{
-		const static uint16_t defaultVendorId = 0x04d8;
-		const static uint16_t defaultProductId = 0x00df;
 		Device();
 		~Device();
-		bool find(uint16_t vendor_id = 0x04d8, uint16_t product_id = 0x00df);
+		bool find(uint16_t vendor_id = defaultVendorId, uint16_t product_id = defaultProductId);
 		size_t getCount() const;
 		const DeviceInformation &get(size_t index) const;
 		const DeviceInformation &operator[](size_t index) const;
-		bool open(uint16_t vendor_id = 0x04d8, uint16_t product_id = 0x00df, const char *serial = nullptr);
+		bool open(uint16_t vendor_id = defaultVendorId, uint16_t product_id = defaultProductId, const char *serial = nullptr);
 		bool open(const DeviceInformation &device);
 		bool open(const char *device_path);
 		bool open(const std::string &device_path);

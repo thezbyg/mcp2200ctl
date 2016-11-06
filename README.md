@@ -90,13 +90,15 @@ CMake 3.1 or newer ([https://cmake.org](https://cmake.org)).
 
  * HIDAPI 0.7 or newer ([http://www.signal11.us/oss/hidapi](http://www.signal11.us/oss/hidapi)).
  * Boost 1.58 or newer ([http://www.boost.org](http://www.boost.org)).
- * Used libraries:
+ * Used boost libraries:
    * Program Options.
    * Test.
+   * Filesystem.
 
  * Additinal graphical application dependencies:
    * GTK 3.21 or newer ([http://www.gtk.org/](http://www.gtk.org/)).
    * libudev 231 or newer ([https://www.freedesktop.org/wiki/Software/systemd/](https://www.freedesktop.org/wiki/Software/systemd/)).
+   * jsoncpp 1.7 or newer ([https://github.com/open-source-parsers/jsoncpp](https://github.com/open-source-parsers/jsoncpp)).
 
 ### Building
 

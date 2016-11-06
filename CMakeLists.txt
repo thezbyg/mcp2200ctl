@@ -38,13 +38,14 @@ if (GENERATE_VERSION)
 	list(APPEND SOURCES "${CMAKE_CURRENT_BINARY_DIR}/version.cpp")
 endif()
 
-find_package(Boost 1.58 COMPONENTS program_options unit_test_framework REQUIRED)
+find_package(Boost 1.58 COMPONENTS program_options filesystem unit_test_framework REQUIRED)
 find_package(Hidapi REQUIRED)
 if (BUILD_GUI)
 	find_package(PkgConfig)
 	if (PkgConfig_FOUND)
 		pkg_check_modules(GTK3 gtk+-3.0)
 		pkg_check_modules(Libudev libudev)
+		pkg_check_modules(Jsoncpp jsoncpp)
 	endif (PkgConfig_FOUND)
 	set(THREADS_PREFER_PTHREAD_FLAG ON)
 	find_package(Threads REQUIRED)
@@ -92,7 +93,7 @@ if (BUILD_CTL)
 	install(TARGETS mcp2200ctl DESTINATION bin)
 endif (BUILD_CTL)
 
-if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND)
+if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND AND Jsoncpp_FOUND)
 	add_executable(mcp2200gui ${GUI_SOURCES} ${GUI_UDEV_SOURCES})
 	target_compile_options(mcp2200gui PUBLIC -std=c++11 -Wall -Wfloat-conversion)
 	target_link_libraries(mcp2200gui PUBLIC -Wl,--as-needed mcp2200)
@@ -102,6 +103,7 @@ if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND)
 		${Hidapi_LIBRARIES}
 		${GTK3_LIBRARIES}
 		${Libudev_LIBRARIES}
+		${Jsoncpp_LIBRARIES}
 		Threads::Threads
 	)
 	target_include_directories(mcp2200gui PUBLIC
@@ -109,7 +111,8 @@ if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND)
 		${Hidapi_INCLUDE_DIRS}
 		${GTK3_INCLUDE_DIRS}
 		${Libudev_INCLUDE_DIRS}
+		${Jsoncpp_INCLUDE_DIRS}
 	)
 	install(TARGETS mcp2200gui DESTINATION bin)
-endif (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND)
+endif (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND AND Jsoncpp_FOUND)
 
