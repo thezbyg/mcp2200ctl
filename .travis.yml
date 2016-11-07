@@ -1,0 +1,45 @@
+language: cpp
+
+os:
+	- linux
+
+dist: trusty
+
+compiler:
+	- clang
+	- gcc
+
+sudo: required
+
+addons:
+	apt:
+		sources:
+			- llvm-toolchain-precise
+			- ubuntu-toolchain-r-test
+		packages:
+			- clang-3.8
+			- g++-5
+			- gcc-5
+			- cmake
+			- pkg-config
+			- libhidapi-dev
+			- libgtk-3-dev
+			- libudev-dev
+			- libjsoncpp-dev
+			- libboost-system-dev
+			- libboost-test-dev
+			- libboost-program-options-dev
+			- libboost-filesystem-dev
+
+install:
+	- if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+	- if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
+
+script:
+	- mkdir build
+	- cd build
+	- cmake .. && make
+
+env:
+	global:
+		- LANG="en_US.UTF-8"
