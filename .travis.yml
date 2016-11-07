@@ -26,20 +26,34 @@ addons:
       - libgtk-3-dev
       - libudev-dev
       - libjsoncpp-dev
-      - libboost-system-dev
-      - libboost-test-dev
-      - libboost-program-options-dev
-      - libboost-filesystem-dev
+
+cache:
+  directories:
+    - ${TRAVIS_BUILD_DIR}/deps/boost-1.58.0
 
 install:
+  - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
+  - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
+  - |
+    BOOST_DIR=${DEPS_DIR}/boost-${BOOST_VERSION}
+    if [[ -z "$(ls -A ${BOOST_DIR})" ]]; then
+      BOOST_URL="http://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION//\./_}.tar.gz"
+      mkdir -p ${BOOST_DIR}
+      { travis_retry wget --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C ${BOOST_DIR}; } || exit 1
+      (cd ${BOOST_DIR}/tools/build && ./bootstrap.sh && ./b2 install --with-filesystem --with-program_options --with-test --with-system --prefix=${DEPS_DIR}/b2)
+    fi
+    CMAKE_OPTIONS+=" -DBOOST_ROOT=${BOOST_DIR}"
+
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
 
 script:
+  - cd ${TRAVIS_BUILD_DIR}
   - mkdir build
   - cd build
-  - cmake .. && make
+  - cmake .. ${CMAKE_OPTIONS} && make
 
 env:
   global:
     - LANG="en_US.UTF-8"
+    - BOOST_VERSION=1.58.0
