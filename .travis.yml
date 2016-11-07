@@ -32,6 +32,8 @@ cache:
     - ${TRAVIS_BUILD_DIR}/deps/boost-1.58.0
 
 install:
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
+  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
   - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
   - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
   - |
@@ -45,9 +47,6 @@ install:
       (cd ${BOOST_DIR} && b2 --with-filesystem --with-program_options --with-test --with-system stage)
     fi
     CMAKE_OPTIONS+=" -DBOOST_ROOT=${BOOST_DIR}"
-
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
 
 script:
   - cd ${TRAVIS_BUILD_DIR}
