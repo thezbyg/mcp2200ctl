@@ -4,6 +4,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 file(GLOB SOURCES src/*.cpp src/*.h)
 file(GLOB CONSOLE_SOURCES src/console/*.cpp src/console/*.h)
 file(GLOB GUI_SOURCES src/gui/*.cpp src/gui/*.h)
+if (CMAKE_COMPILER_IS_GNUCXX)
+	set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Wl,--as-needed")
+endif(CMAKE_COMPILER_IS_GNUCXX)
 
 if ("${CMAKE_SYSTEM_NAME}" MATCHES Linux)
 	add_definitions(-DLINUX_BUILD)
@@ -53,7 +56,6 @@ endif (BUILD_GUI)
 
 add_library(mcp2200 ${SOURCES})
 target_compile_options(mcp2200 PUBLIC -std=c++11 -Wall -Wfloat-conversion)
-target_link_libraries(mcp2200 PUBLIC -Wl,--as-needed)
 target_include_directories(mcp2200 PUBLIC src)
 target_link_libraries(mcp2200 PUBLIC
 	${Boost_LIBRARIES}
@@ -66,7 +68,7 @@ target_include_directories(mcp2200 PUBLIC
 
 add_executable(test_gpio_mask src/test/gpio_mask.cpp)
 target_compile_options(test_gpio_mask PUBLIC -std=c++11 -Wall -Wfloat-conversion)
-target_link_libraries(test_gpio_mask PUBLIC -Wl,--as-needed mcp2200)
+target_link_libraries(test_gpio_mask PUBLIC mcp2200)
 target_include_directories(test_gpio_mask PUBLIC src src/test)
 target_link_libraries(test_gpio_mask PUBLIC
 	${Boost_LIBRARIES}
@@ -80,7 +82,7 @@ target_include_directories(test_gpio_mask PUBLIC
 if (BUILD_CTL)
 	add_executable(mcp2200ctl ${CONSOLE_SOURCES})
 	target_compile_options(mcp2200ctl PUBLIC -std=c++11 -Wall -Wfloat-conversion)
-	target_link_libraries(mcp2200ctl PUBLIC -Wl,--as-needed mcp2200)
+	target_link_libraries(mcp2200ctl PUBLIC mcp2200)
 	target_include_directories(mcp2200ctl PUBLIC src src/console)
 	target_link_libraries(mcp2200ctl PUBLIC
 		${Boost_LIBRARIES}
@@ -96,7 +98,7 @@ endif (BUILD_CTL)
 if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND AND Jsoncpp_FOUND)
 	add_executable(mcp2200gui ${GUI_SOURCES} ${GUI_UDEV_SOURCES})
 	target_compile_options(mcp2200gui PUBLIC -std=c++11 -Wall -Wfloat-conversion)
-	target_link_libraries(mcp2200gui PUBLIC -Wl,--as-needed mcp2200)
+	target_link_libraries(mcp2200gui PUBLIC mcp2200)
 	target_include_directories(mcp2200gui PUBLIC src src/gui)
 	target_link_libraries(mcp2200gui PUBLIC
 		${Boost_LIBRARIES}
