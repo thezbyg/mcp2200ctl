@@ -29,11 +29,11 @@ addons:
 
 cache:
   directories:
-    - ${TRAVIS_BUILD_DIR}/deps/boost-1.58.0
+    - ${TRAVIS_BUILD_DIR}/deps/boost-1.59.0
 
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
-  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8"; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; TOOLSET="gcc-5" fi
+  - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8" TOOLSET="clang"; fi
   - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
   - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}
   - |
@@ -44,7 +44,7 @@ install:
       { travis_retry wget --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C ${BOOST_DIR}; } || exit 1
       (cd ${BOOST_DIR}/tools/build && ./bootstrap.sh && ./b2 install --prefix=${DEPS_DIR}/b2)
       export PATH=${DEPS_DIR}/b2/bin:${PATH}
-      (cd ${BOOST_DIR} && b2 --with-filesystem --with-program_options --with-test --with-system stage)
+      (cd ${BOOST_DIR} && b2 toolset=${TOOLSET} --with-filesystem --with-program_options --with-test --with-system stage)
     fi
     CMAKE_OPTIONS+=" -DBOOST_ROOT=${BOOST_DIR}"
 
@@ -57,4 +57,4 @@ script:
 env:
   global:
     - LANG="en_US.UTF-8"
-    - BOOST_VERSION=1.58.0
+    - BOOST_VERSION=1.59.0
