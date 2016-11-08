@@ -1,5 +1,7 @@
 # mcp2200ctl - MCP2200 USB-to-UART serial converter control program.
 
+[![Build Status](https://travis-ci.org/thezbyg/mcp2200ctl.svg?branch=master)](https://travis-ci.org/thezbyg/mcp2200ctl)
+
 ## mcp2200ctl
 
 mcp2200ctl is a command-line program which allows controlling additional features found in MCP2200 USB-to-UART serial converter ([http://www.microchip.com/wwwproducts/en/MCP2200](http://www.microchip.com/wwwproducts/en/MCP2200)). 
@@ -20,7 +22,7 @@ mcp2200ctl has the following features:
 
 mcp2200gui is a GTK 3 based graphical program with the same purpose as mcp2200ctl.
 
-![mcp2200gui screenshot](/share/screenshot.png?raw=true "Optional Title")
+![mcp2200gui screenshot](/share/screenshot.png?raw=true "mcp2200gui screenshot")
 
 ## mcp2200ctl usage
 
@@ -80,7 +82,12 @@ EEPROM value: 12
 
 ### Compiler
 
-Some of C++11 features are required. Compilation is currently only tested on gcc version 5.3.1.
+Some of C++11 features are required. Compilation is currently only tested on the following compilers:
+
+ * gcc 5.4.1
+ * gcc 6.2.0
+ * clang 3.8
+ * clang 3.9
 
 ### Build dependencies
 
@@ -99,6 +106,12 @@ CMake 3.1 or newer ([https://cmake.org](https://cmake.org)).
    * GTK 3.21 or newer ([http://www.gtk.org/](http://www.gtk.org/)).
    * libudev 231 or newer ([https://www.freedesktop.org/wiki/Software/systemd/](https://www.freedesktop.org/wiki/Software/systemd/)).
    * jsoncpp 1.7 or newer ([https://github.com/open-source-parsers/jsoncpp](https://github.com/open-source-parsers/jsoncpp)).
+
+On Debian, and on Debian based Linux distributions, the following command can be used to get all of the build dependencies:
+
+```shell
+apt-get install cmake pkg-config libhidapi-dev libgtk-3-dev libudev-dev libjsoncpp-dev libboost-filesystem-dev libboost-program-options-dev libboost-test-dev
+```
 
 ### Building
 
