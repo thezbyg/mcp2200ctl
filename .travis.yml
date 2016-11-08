@@ -32,7 +32,7 @@ cache:
     - ${TRAVIS_BUILD_DIR}/deps/boost-1.59.0
 
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; TOOLSET="gcc-5" fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5" TOOLSET="gcc-5"; fi
   - if [ "$CXX" = "clang++" ]; then export CXX="clang++-3.8" CC="clang-3.8" TOOLSET="clang"; fi
   - DEPS_DIR="${TRAVIS_BUILD_DIR}/deps"
   - mkdir -p ${DEPS_DIR} && cd ${DEPS_DIR}

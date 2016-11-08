@@ -1,10 +1,10 @@
 find_library(Hidapi_LIBRARY NAMES hidapi hidapi-hidraw)
 find_path(Hidapi_INCLUDE_DIR NAMES hidapi.h PATH_SUFFIXES hidapi)
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Hidapi DEFAULT_MSG Hidapi_LIBRARY Hidapi_INCLUDE_DIR)
+find_package_handle_standard_args(Hidapi FOUND_VAR Hidapi_FOUND REQUIRED_VARS Hidapi_LIBRARY Hidapi_INCLUDE_DIR)
 if(Hidapi_FOUND)
 	set(Hidapi_LIBRARIES "${Hidapi_LIBRARY}")
 	set(Hidapi_INCLUDE_DIRS "${Hidapi_INCLUDE_DIR}")
-endif()
+endif(Hidapi_FOUND)
 
 mark_as_advanced(Hidapi_INCLUDE_DIR Hidapi_LIBRARY)
