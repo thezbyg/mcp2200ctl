@@ -23,6 +23,9 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "helpers.h"
+#ifdef WIN32
+#include <windows.h>
+#endif
 using namespace std;
 namespace command_line
 {

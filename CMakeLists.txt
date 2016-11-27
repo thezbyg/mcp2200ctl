@@ -55,7 +55,12 @@ if (BUILD_GUI)
 endif (BUILD_GUI)
 
 add_library(mcp2200 ${SOURCES})
-target_compile_options(mcp2200 PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+if (MSVC)
+	target_compile_options(mcp2200 PUBLIC /MD /utf-8)
+	add_definitions(/DUNICODE)
+else()
+	target_compile_options(mcp2200 PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+endif()
 target_include_directories(mcp2200 PUBLIC src)
 target_link_libraries(mcp2200 PUBLIC
 	${Boost_LIBRARIES}
@@ -67,7 +72,13 @@ target_include_directories(mcp2200 PUBLIC
 )
 
 add_executable(test_gpio_mask src/test/gpio_mask.cpp)
-target_compile_options(test_gpio_mask PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+
+if (MSVC)
+	target_compile_options(test_gpio_mask PUBLIC /MD /utf-8)
+	add_definitions(/DUNICODE)
+else()
+	target_compile_options(test_gpio_mask PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+endif()
 target_link_libraries(test_gpio_mask PUBLIC mcp2200)
 target_include_directories(test_gpio_mask PUBLIC src src/test)
 target_link_libraries(test_gpio_mask PUBLIC
@@ -81,7 +92,13 @@ target_include_directories(test_gpio_mask PUBLIC
 
 if (BUILD_CTL)
 	add_executable(mcp2200ctl ${CONSOLE_SOURCES})
-	target_compile_options(mcp2200ctl PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+	
+	if (MSVC)
+		target_compile_options(mcp2200ctl PUBLIC /MD /utf-8)
+		add_definitions(/DUNICODE)
+	else()
+		target_compile_options(mcp2200ctl PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+	endif()
 	target_link_libraries(mcp2200ctl PUBLIC mcp2200)
 	target_include_directories(mcp2200ctl PUBLIC src src/console)
 	target_link_libraries(mcp2200ctl PUBLIC
@@ -97,7 +114,13 @@ endif (BUILD_CTL)
 
 if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND AND Jsoncpp_FOUND)
 	add_executable(mcp2200gui ${GUI_SOURCES} ${GUI_UDEV_SOURCES})
-	target_compile_options(mcp2200gui PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+	
+	if (MSVC)
+		target_compile_options(mcp2200ctl PUBLIC /MD /utf-8)
+		add_definitions(/DUNICODE)
+	else()
+		target_compile_options(mcp2200gui PUBLIC -std=c++11 -Wall -Wfloat-conversion)
+	endif()
 	target_link_libraries(mcp2200gui PUBLIC mcp2200)
 	target_include_directories(mcp2200gui PUBLIC src src/gui)
 	target_link_libraries(mcp2200gui PUBLIC
