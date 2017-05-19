@@ -116,7 +116,7 @@ if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND AND Jsoncpp_FOUND)
 	add_executable(mcp2200gui ${GUI_SOURCES} ${GUI_UDEV_SOURCES})
 	
 	if (MSVC)
-		target_compile_options(mcp2200ctl PUBLIC /MD /utf-8)
+		target_compile_options(mcp2200gui PUBLIC /MD /utf-8)
 		add_definitions(/DUNICODE)
 	else()
 		target_compile_options(mcp2200gui PUBLIC -std=c++11 -Wall -Wfloat-conversion)
