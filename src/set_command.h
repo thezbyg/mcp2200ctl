@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Albertas Vyšniauskas
+Copyright (c) 2016-2017, Albertas Vyšniauskas
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,9 @@ namespace command_line
 		virtual bool run();
 		private:
 		Target m_target;
-		BitMap<uint8_t> m_values;
+		BitMap<uint8_t> m_values, m_mask;
+		bool m_value, m_all_values, m_one_pin, m_has_mask;
+		int m_pin;
 	};
 }
 #endif /* HEADER_SET_COMMAND_H_ */

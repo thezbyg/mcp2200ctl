@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Albertas Vyšniauskas
+Copyright (c) 2016-2017, Albertas Vyšniauskas
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -191,6 +191,7 @@ namespace mcp2200
 		bool write(const Command &command);
 		bool read(Command &command);
 		bool readAll(Command &response);
+		bool writeAfterRead(std::function<bool(Command &command)> command_prepare);
 		bool configure(uint8_t io_directions, int baud_rate, LedMode rx_led_mode, LedMode tx_led_mode, bool flow_control, bool usb_configure, bool suspend, bool invert);
 		bool configure(std::function<void(Command &)> actions);
 		bool setGpioValues(uint8_t values);

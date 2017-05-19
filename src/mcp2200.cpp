@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Albertas Vyšniauskas
+Copyright (c) 2016-2017, Albertas Vyšniauskas
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -524,6 +524,20 @@ namespace mcp2200
 			.setCommand(CommandType::read_all)
 			;
 		return write(command) && read(response);
+	}
+	bool Device::writeAfterRead(std::function<bool(Command &command)> command_prepare)
+	{
+		Command response;
+		if (!readAll(response)){
+			return false;
+		}
+		Command command(response);
+		if (command_prepare){
+			if (!command_prepare(command)){
+				return false;
+			}
+		}
+		return write(command);
 	}
 	bool Device::setGpioValues(uint8_t values)
 	{
