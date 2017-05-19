@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016, Albertas Vyšniauskas
+Copyright (c) 2016-2017, Albertas Vyšniauskas
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 #include <fstream>
 #include <sstream>
-int adm_monitor();
 using namespace std;
 namespace fs = boost::filesystem;
 namespace gui
@@ -385,13 +384,25 @@ namespace gui
 			uint8_t gpio = 0, gpio_directions = 0, gpio_defaults = 0;
 			for (int i = 0; i < 8; i++){
 				gpio |= gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_gpio[i].value)) << i;
-				gpio_directions |= gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_gpio[i].output)) << i;
+				gpio_directions |= gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_gpio[i].input)) << i;
 				gpio_defaults |= gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_gpio[i].default_value)) << i;
 			}
 			command
 				.setGpioValues(gpio & gpio_mask, ~gpio & gpio_mask)
 				.setDefaultValues((gpio_defaults & gpio_mask) | (command.getDefaultValues() & ~gpio_mask))
 				.setIoDirections((gpio_directions & gpio_mask) | (command.getIoDirections() & ~gpio_mask));
+		}
+		void toGpioValuesCommand(mcp2200::Command &command)
+		{
+			using namespace mcp2200;
+			uint8_t gpio_mask = command.getIoMask();
+			uint8_t gpio = 0;
+			for (int i = 0; i < 8; i++){
+				gpio |= gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(m_gpio[i].value)) << i;
+			}
+			command
+				.setCommand(CommandType::set_clear_outputs)
+				.setGpioValues(gpio & gpio_mask, ~gpio & gpio_mask);
 		}
 		void getGpioMask()
 		{
@@ -406,9 +417,8 @@ namespace gui
 				gtk_widget_set_sensitive(m_gpio[i].default_value, ((gpio_mask >> i) & 1) == 1);
 			}
 		}
-		bool applyToDevice()
+		bool openCurrentDevicePath(mcp2200::Device &device)
 		{
-			using namespace mcp2200;
 			string current_device_path;
 			GtkTreePath *path;
 			gtk_tree_view_get_cursor(GTK_TREE_VIEW(m_device_list), &path, nullptr);
@@ -427,8 +437,16 @@ namespace gui
 				}
 				gtk_tree_path_free(path);
 			}
-			Device device;
 			if (!device.open(current_device_path.c_str())){
+				return false;
+			}
+			return true;
+		}
+		bool applyToDevice()
+		{
+			using namespace mcp2200;
+			Device device;
+			if (!openCurrentDevicePath(device)){
 				return false;
 			}
 			Command response;
@@ -437,6 +455,28 @@ namespace gui
 			}
 			Command command(response);
 			toCommand(command);
+			if (!device.write(command)){
+				return false;
+			}
+			if (!device.readAll(response)){
+				return false;
+			}
+			setCurrentState(response);
+			return true;
+		}
+		bool applyGpioValuesToDevice()
+		{
+			using namespace mcp2200;
+			Device device;
+			if (!openCurrentDevicePath(device)){
+				return false;
+			}
+			Command response;
+			if (!device.readAll(response)){
+				return false;
+			}
+			Command command(response);
+			toGpioValuesCommand(command);
 			if (!device.write(command)){
 				return false;
 			}
@@ -601,6 +641,9 @@ namespace gui
 			GtkWidget *apply = gtk_button_new_with_label("Apply");
 			g_signal_connect(apply, "clicked", G_CALLBACK(onApply), this);
 			gtk_box_pack_start(GTK_BOX(hbox), apply, false, false, 0);
+			GtkWidget *apply_gpio_values = gtk_button_new_with_label("Apply GPIO values");
+			g_signal_connect(apply_gpio_values, "clicked", G_CALLBACK(onApplyGpioValues), this);
+			gtk_box_pack_start(GTK_BOX(hbox), apply_gpio_values, false, false, 0);
 			GtkWidget *reload = gtk_button_new_with_label("Reload");
 			g_signal_connect(reload, "clicked", G_CALLBACK(onReload), this);
 			gtk_box_pack_start(GTK_BOX(hbox), reload, false, false, 0);
@@ -698,6 +741,10 @@ namespace gui
 		static void onApply(GtkWidget *, Impl *app)
 		{
 			app->applyToDevice();
+		}
+		static void onApplyGpioValues(GtkWidget *, Impl *app)
+		{
+			app->applyGpioValuesToDevice();
 		}
 		static void onRefresh(GtkWidget *, Impl *app)
 		{
