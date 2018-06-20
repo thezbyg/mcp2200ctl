@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Albertas Vyšniauskas
+Copyright (c) 2016-2018, Albertas Vyšniauskas
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -617,12 +617,12 @@ namespace mcp2200
 			if (i == 0){
 				command.base_configure.set_string.chars[0] = native_to_big(static_cast<uint16_t>(0x03 | (length << 8)));
 				for (int j = 0; j < 3; j++){
-					command.base_configure.set_string.chars[j + 1] = position < value_w.length() ? native_to_big(static_cast<uint16_t>(value_w[position])) : 0;
+					command.base_configure.set_string.chars[j + 1] = position < value_w.length() ? native_to_little(static_cast<uint16_t>(value_w[position])) : 0;
 					position++;
 				}
 			}else{
 				for (int j = 0; j < 4; j++){
-					command.base_configure.set_string.chars[j] = position < value_w.length() ? native_to_big(static_cast<uint16_t>(value_w[position])) : 0;
+					command.base_configure.set_string.chars[j] = position < value_w.length() ? native_to_little(static_cast<uint16_t>(value_w[position])) : 0;
 					position++;
 				}
 			}
