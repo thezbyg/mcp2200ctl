@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2016-2017, Albertas Vyšniauskas
+Copyright (c) 2016-2018, Albertas Vyšniauskas
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -23,14 +23,14 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "mcp2200gui.h"
+#include "enum.h"
 #include "mcp2200.h"
 #include "paths.h"
-#include "mapping.h"
+#include "types.h"
 #include "udev/udev.h"
 #include <gtk/gtk.h>
 #include <json/json.h>
 #include <hidapi/hidapi.h>
-#include <type_traits>
 #include <cstddef>
 #include <thread>
 #include <mutex>
@@ -50,51 +50,6 @@ namespace gui
 		product = 3,
 		release_number = 4,
 	};
-	template<class enumeration>
-	constexpr size_t enum_value(const enumeration value) noexcept
-	{
-		static_assert(is_enum<enumeration>::value, "Not an enum");
-		return static_cast<size_t>(value);
-	}
-	struct Uint16HexValue: public mapping::Value<uint16_t>
-	{
-		uint16_t default_value;
-		Uint16HexValue(const char *name, size_t offset, const uint16_t &default_value = 0):
-			Value(name, offset, "uint16_hex"),
-			default_value(default_value)
-		{
-		}
-		virtual ~Uint16HexValue() {}
-		virtual void setDefault(void *object) const
-		{
-			*this->getValuePointer(object) = default_value;
-		}
-	};
-	struct Uint16HexAdapter: public mapping::Adapter<Json::Value>
-	{
-		Uint16HexAdapter(): Adapter("uint16_hex") {}
-		virtual ~Uint16HexAdapter() {};
-		virtual void save(const void *object, const mapping::BaseValue &value, Json::Value &output)
-		{
-			stringstream s;
-			s << setfill('0') << hex << setw(4) << value.get<uint16_t>(object);
-			output[value.getName()] = s.str();
-		};
-		virtual void load(void *object, const mapping::BaseValue &value, const Json::Value &input)
-		{
-			auto &name = value.getName();
-			if (input.isMember(name) && input[name].isConvertibleTo(Json::stringValue)){
-				stringstream s(input[name].asString());
-				uint16_t v;
-				s >> hex >> v;
-				value.set<uint16_t>(object, static_cast<const uint16_t&>(v));
-			}else if (input.isMember(name) && input[name].isConvertibleTo(Json::intValue)){
-				value.set<uint16_t>(object, input[name].asInt());
-			}else{
-				value.setDefault(object);
-			}
-		};
-	};
 	struct Program::Impl
 	{
 		Program *m_decl;
@@ -106,13 +61,16 @@ namespace gui
 			GtkWidget *value, *input, *output, *default_value;
 		};
 		Gpio m_gpio[8];
-		GtkWidget *m_vid, *m_pid;
+		GtkWidget *m_vid, *m_pid, *m_product, *m_manufacturer;
+		GtkWidget *m_new_vid, *m_new_pid, *m_new_product, *m_new_manufacturer;
+		GtkWidget *m_description_scrolled_widget, *m_device_scrolled_widget;
 		GDBusObjectManager *m_manager;
 		thread m_usb_event_thread;
 		string m_current_device;
 		struct Configuration
 		{
 			uint16_t vid, pid;
+			string manufacturer, product;
 		}m_configuration;
 		Json::Value m_configuration_json;
 		mapping::Layout m_configuration_layout;
@@ -127,7 +85,9 @@ namespace gui
 		{
 			m_configuration_layout
 				(new Uint16HexValue("vid", offsetof(Configuration, vid), mcp2200::defaultVendorId))
-				(new Uint16HexValue("pid", offsetof(Configuration, pid), mcp2200::defaultProductId));
+				(new Uint16HexValue("pid", offsetof(Configuration, pid), mcp2200::defaultProductId))
+				(new StringValue("manufacturer", offsetof(Configuration, manufacturer), ""))
+				(new StringValue("product", offsetof(Configuration, product), ""));
 			loadConfiguration();
 		}
 		fs::path getConfigurationPath()
@@ -144,7 +104,8 @@ namespace gui
 			using namespace mapping;
 			ReaderWriter<Json::Value> reader;
 			reader
-				(new Uint16HexAdapter());
+				(new Uint16HexAdapter())
+				(new StringAdapter());
 			fs::path config_path;
 			try{
 				config_path = getConfigurationPath() / "configuration.json";
@@ -172,7 +133,8 @@ namespace gui
 			}
 			ReaderWriter<Json::Value> writer;
 			writer
-				(new Uint16HexAdapter());
+				(new Uint16HexAdapter())
+				(new StringAdapter());
 			writer.save(m_configuration_layout, &m_configuration, m_configuration_json);
 			ofstream file(config_path.string());
 			if (file.is_open()){
@@ -238,6 +200,14 @@ namespace gui
 			g_object_set(renderer, "editable", false, nullptr);
 			gtk_tree_view_append_column(GTK_TREE_VIEW(list), col);
 		}
+		GtkWidget* createScrolledWindow()
+		{
+			GtkWidget *scrolled_window = gtk_scrolled_window_new(0, 0);
+			gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+			gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window), GTK_SHADOW_IN);
+			gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scrolled_window), 100);
+			return scrolled_window;
+		}
 		GtkWidget* createDeviceList(GtkWidget **device_list)
 		{
 			GtkWidget *list = gtk_tree_view_new();
@@ -257,11 +227,8 @@ namespace gui
 			gtk_tree_view_set_enable_search(GTK_TREE_VIEW(list), false);
 			gtk_tree_view_set_model(GTK_TREE_VIEW(list), GTK_TREE_MODEL(store));
 			g_object_unref(GTK_TREE_MODEL(store));
-			GtkWidget *scrolled_window = gtk_scrolled_window_new(0, 0);
-			gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window), GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
-			gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(scrolled_window), GTK_SHADOW_IN);
+			GtkWidget *scrolled_window = createScrolledWindow();
 			gtk_container_add(GTK_CONTAINER(scrolled_window), list);
-			gtk_scrolled_window_set_min_content_height(GTK_SCROLLED_WINDOW(scrolled_window), 100);
 			return scrolled_window;
 		}
 		void addDevice(const mcp2200::DeviceInformation &device)
@@ -349,6 +316,15 @@ namespace gui
 			if (!device.open(m_current_device.c_str())){
 				return false;
 			}
+			std::string manufacturer, product;
+			device.getManufacturer(manufacturer);
+			device.getProduct(product);
+			string vid = toHexString(m_configuration.vid);
+			string pid = toHexString(m_configuration.pid);
+			gtk_entry_set_text(GTK_ENTRY(m_new_pid), pid.c_str());
+			gtk_entry_set_text(GTK_ENTRY(m_new_vid), vid.c_str());
+			gtk_entry_set_text(GTK_ENTRY(m_new_manufacturer), manufacturer.c_str());
+			gtk_entry_set_text(GTK_ENTRY(m_new_product), product.c_str());
 			mcp2200::Command response;
 			if (!device.readAll(response)){
 				return false;
@@ -595,7 +571,7 @@ namespace gui
 
 			GtkWidget *grid = addPageWithGrid("Properties");
 			GtkWidget *vbox = gtk_widget_get_parent(grid);
-			gtk_box_pack_start(GTK_BOX(vbox), createDeviceList(&m_device_list), true, true, 0);
+			gtk_box_pack_start(GTK_BOX(vbox), m_device_scrolled_widget = createDeviceList(&m_device_list), true, true, 0);
 			gtk_box_reorder_child(GTK_BOX(vbox), grid, 1);
 
 			addLabel(grid, 0, 0, "Options");
@@ -652,6 +628,38 @@ namespace gui
 			g_signal_connect(refresh, "clicked", G_CALLBACK(onRefresh), this);
 			gtk_box_pack_start(GTK_BOX(hbox), refresh, false, false, 0);
 
+			grid = addPageWithGrid("Description");
+			gtk_widget_set_vexpand(grid, false);
+			vbox = gtk_widget_get_parent(grid);
+			gtk_box_pack_start(GTK_BOX(vbox), m_description_scrolled_widget = createScrolledWindow(), true, true, 0);
+			gtk_box_reorder_child(GTK_BOX(vbox), grid, 1);
+
+			addLabel(grid, 0, 0, "Vendor ID", nullptr, false);
+			addEntry(grid, 0, 1, "", &m_new_vid, true);
+			addLabel(grid, 1, 0, "Product ID", nullptr, false);
+			addEntry(grid, 1, 1, "", &m_new_pid, true);
+			addLabel(grid, 2, 0, "Product", nullptr, false);
+			addEntry(grid, 2, 1, "", &m_new_product, true);
+			addLabel(grid, 3, 0, "Manufacturer", nullptr, false);
+			addEntry(grid, 3, 1, "", &m_new_manufacturer, true);
+
+			hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
+			gtk_box_pack_start(GTK_BOX(vbox), hbox, false, true, 0);
+			gtk_widget_set_halign(hbox, GTK_ALIGN_END);
+
+			apply = gtk_button_new_with_label("Apply");
+			g_signal_connect(apply, "clicked", G_CALLBACK(onDescriptionApply), this);
+			gtk_box_pack_start(GTK_BOX(hbox), apply, false, false, 0);
+			GtkWidget *load_defaults = gtk_button_new_with_label("Load defaults");
+			g_signal_connect(load_defaults, "clicked", G_CALLBACK(onLoadDefaults), this);
+			gtk_box_pack_start(GTK_BOX(hbox), load_defaults, false, false, 0);
+			reload = gtk_button_new_with_label("Reload");
+			g_signal_connect(reload, "clicked", G_CALLBACK(onReload), this);
+			gtk_box_pack_start(GTK_BOX(hbox), reload, false, false, 0);
+			refresh = gtk_button_new_with_label("Refresh device list");
+			g_signal_connect(refresh, "clicked", G_CALLBACK(onRefresh), this);
+			gtk_box_pack_start(GTK_BOX(hbox), refresh, false, false, 0);
+
 			grid = addPageWithGrid("Configuration");
 			gtk_widget_set_vexpand(grid, true);
 			vbox = gtk_widget_get_parent(grid);
@@ -659,9 +667,13 @@ namespace gui
 			string pid = toHexString(m_configuration.pid);
 
 			addLabel(grid, 0, 0, "Vendor ID", nullptr, false);
-			addEntry(grid, 0, 1, vid.c_str(), &m_vid, false);
+			addEntry(grid, 0, 1, vid.c_str(), &m_vid, true);
 			addLabel(grid, 1, 0, "Product ID", nullptr, false);
-			addEntry(grid, 1, 1, pid.c_str(), &m_pid, false);
+			addEntry(grid, 1, 1, pid.c_str(), &m_pid, true);
+			addLabel(grid, 2, 0, "Default product", nullptr, false);
+			addEntry(grid, 2, 1, m_configuration.product.c_str(), &m_product, true);
+			addLabel(grid, 3, 0, "Default manufacturer", nullptr, false);
+			addEntry(grid, 3, 1, m_configuration.manufacturer.c_str(), &m_manufacturer, true);
 
 			hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
 			gtk_box_pack_start(GTK_BOX(vbox), hbox, false, true, 0);
@@ -672,6 +684,7 @@ namespace gui
 			gtk_box_pack_start(GTK_BOX(hbox), apply, false, false, 0);
 
 			gtk_box_pack_start(GTK_BOX(vbox_main), m_notebook, true, true, 0);
+			g_signal_connect(G_OBJECT(m_notebook), "switch-page", G_CALLBACK(onPageSwitch), this);
 
 			m_usb_event_thread = thread(&Impl::waitForUsbEvents, this);
 			showDevices();
@@ -681,11 +694,64 @@ namespace gui
 			gtk_main();
 			return 0;
 		}
+		void pageSwitch(int page)
+		{
+			switch (page){
+				case 0:
+					if (gtk_widget_get_parent(m_device_list) != m_device_scrolled_widget){
+						g_object_ref(m_device_list);
+						gtk_container_remove(GTK_CONTAINER(m_description_scrolled_widget), m_device_list);
+						gtk_container_add(GTK_CONTAINER(m_device_scrolled_widget), m_device_list);
+						g_object_unref(m_device_list);
+					}
+					break;
+				case 1:
+					if (gtk_widget_get_parent(m_device_list) != m_description_scrolled_widget){
+						g_object_ref(m_device_list);
+						gtk_container_remove(GTK_CONTAINER(m_device_scrolled_widget), m_device_list);
+						gtk_container_add(GTK_CONTAINER(m_description_scrolled_widget), m_device_list);
+						g_object_unref(m_device_list);
+					}
+					break;
+			}
+		}
 		void applyConfiguration()
 		{
 			m_configuration.vid = toUint16(gtk_entry_get_text(GTK_ENTRY(m_vid)));
 			m_configuration.pid = toUint16(gtk_entry_get_text(GTK_ENTRY(m_pid)));
+			m_configuration.manufacturer = gtk_entry_get_text(GTK_ENTRY(m_manufacturer));
+			m_configuration.product = gtk_entry_get_text(GTK_ENTRY(m_product));
 			showDevices();
+		}
+		void applyDescription()
+		{
+			uint16_t vid = toUint16(gtk_entry_get_text(GTK_ENTRY(m_new_vid)));
+			uint16_t pid = toUint16(gtk_entry_get_text(GTK_ENTRY(m_new_pid)));
+			string manufacturer = gtk_entry_get_text(GTK_ENTRY(m_new_manufacturer));
+			string product = gtk_entry_get_text(GTK_ENTRY(m_new_product));
+			mcp2200::Device device;
+			if (!device.open(m_current_device.c_str())){
+				return;
+			}
+			std::string old_manufacturer, old_product;
+			device.getManufacturer(old_manufacturer);
+			device.getProduct(old_product);
+			if (old_manufacturer != manufacturer)
+				device.setManufacturer(manufacturer.c_str());
+			if (old_product != product)
+				device.setProduct(product.c_str());
+			if (m_configuration.vid != vid || m_configuration.pid != pid)
+				device.setVendorProductIds(vid, pid);
+			showDevices();
+		}
+		void loadDefaults()
+		{
+			string vid = toHexString(m_configuration.vid);
+			string pid = toHexString(m_configuration.pid);
+			gtk_entry_set_text(GTK_ENTRY(m_new_vid), vid.c_str());
+			gtk_entry_set_text(GTK_ENTRY(m_new_pid), pid.c_str());
+			gtk_entry_set_text(GTK_ENTRY(m_new_manufacturer), m_configuration.manufacturer.c_str());
+			gtk_entry_set_text(GTK_ENTRY(m_new_product), m_configuration.product.c_str());
 		}
 		static gboolean onDeleteEvent(GtkWidget *, GdkEvent *, Program *)
 		{
@@ -758,6 +824,18 @@ namespace gui
 		static void onConfigurationApply(GtkWidget *, Impl *app)
 		{
 			app->applyConfiguration();
+		}
+		static void onDescriptionApply(GtkWidget *, Impl *app)
+		{
+			app->applyDescription();
+		}
+		static void onPageSwitch(GtkWidget *, GtkWidget *, guint page_num, Impl *app)
+		{
+			app->pageSwitch(page_num);
+		}
+		static void onLoadDefaults(GtkWidget *, Impl *app)
+		{
+			app->loadDefaults();
 		}
 	};
 	Program::Program()
