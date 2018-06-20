@@ -79,13 +79,13 @@ if (MSVC)
 else()
 	target_compile_options(test_gpio_mask PUBLIC -std=c++11 -Wall -Wfloat-conversion)
 endif()
-target_link_libraries(test_gpio_mask PUBLIC mcp2200)
-target_include_directories(test_gpio_mask PUBLIC src src/test)
 target_link_libraries(test_gpio_mask PUBLIC
+	mcp2200
 	${Boost_LIBRARIES}
 	${Hidapi_LIBRARIES}
 )
 target_include_directories(test_gpio_mask PUBLIC
+	src src/test
 	${Boost_INCLUDE_DIRS}
 	${Hidapi_INCLUDE_DIRS}
 )
@@ -99,13 +99,13 @@ if (BUILD_CTL)
 	else()
 		target_compile_options(mcp2200ctl PUBLIC -std=c++11 -Wall -Wfloat-conversion)
 	endif()
-	target_link_libraries(mcp2200ctl PUBLIC mcp2200)
-	target_include_directories(mcp2200ctl PUBLIC src src/console)
 	target_link_libraries(mcp2200ctl PUBLIC
+		mcp2200
 		${Boost_LIBRARIES}
 		${Hidapi_LIBRARIES}
 	)
 	target_include_directories(mcp2200ctl PUBLIC
+		src src/console
 		${Boost_INCLUDE_DIRS}
 		${Hidapi_INCLUDE_DIRS}
 	)
@@ -121,9 +121,8 @@ if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND AND Jsoncpp_FOUND)
 	else()
 		target_compile_options(mcp2200gui PUBLIC -std=c++11 -Wall -Wfloat-conversion)
 	endif()
-	target_link_libraries(mcp2200gui PUBLIC mcp2200)
-	target_include_directories(mcp2200gui PUBLIC src src/gui)
 	target_link_libraries(mcp2200gui PUBLIC
+		mcp2200
 		${Boost_LIBRARIES}
 		${Hidapi_LIBRARIES}
 		${GTK3_LIBRARIES}
@@ -132,6 +131,7 @@ if (BUILD_GUI AND GTK3_FOUND AND Libudev_FOUND AND Jsoncpp_FOUND)
 		Threads::Threads
 	)
 	target_include_directories(mcp2200gui PUBLIC
+		src src/gui
 		${Boost_INCLUDE_DIRS}
 		${Hidapi_INCLUDE_DIRS}
 		${GTK3_INCLUDE_DIRS}
