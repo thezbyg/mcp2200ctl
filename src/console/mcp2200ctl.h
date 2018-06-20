@@ -33,6 +33,7 @@ namespace command_line
 	struct Program
 	{
 		Program();
+		~Program();
 		int run(int argc, char **argv);
 		void printHelp();
 		private:
@@ -42,6 +43,7 @@ namespace command_line
 		std::shared_ptr<Command> findCommand(const char *name);
 		std::pair<bool, std::string> getCommandName(const std::vector<std::string> &command_line);
 		void printHelp(Command &command);
+		void setLocale();
 		bool m_version;
 		std::map<std::string, std::shared_ptr<Command>> m_command_map;
 	};

@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "udev/udev.h"
 #include <gtk/gtk.h>
 #include <json/json.h>
+#include <hidapi/hidapi.h>
 #include <type_traits>
 #include <cstddef>
 #include <thread>
@@ -761,10 +762,12 @@ namespace gui
 	};
 	Program::Program()
 	{
+		hid_init();
 		m_impl.reset(new Impl(this));
 	}
 	Program::~Program()
 	{
+		hid_exit();
 	}
 	int Program::run(int argc, char **argv)
 	{

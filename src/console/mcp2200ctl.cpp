@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iomanip>
 #include <memory>
 #include <string>
+#include <hidapi/hidapi.h>
 #include <boost/program_options/option.hpp>
 #include <boost/program_options/cmdline.hpp>
 #include <boost/program_options/options_description.hpp>
@@ -74,6 +75,7 @@ namespace command_line
 	};
 	Program::Program()
 	{
+		hid_init();
 		addCommand(make_shared<ListCommand>());
 		addCommand(make_shared<GetCommand>());
 		addCommand(make_shared<SetCommand>());
@@ -82,6 +84,10 @@ namespace command_line
 		addCommand(make_shared<GetEepromCommand>());
 		addCommand(make_shared<SetEepromCommand>());
 		addCommand(make_shared<HelpCommand>(this));
+	}
+	Program::~Program()
+	{
+		hid_exit();
 	}
 	void Program::addCommand(shared_ptr<Command> command)
 	{
@@ -162,17 +168,24 @@ namespace command_line
 		cout << "Options:" << "\n" << options;
 		cout << "Global options:" << "\n" << global_options;
 	}
+	void Program::setLocale()
+	{
+#ifndef WIN32
+		setlocale(LC_CTYPE, "en_US.utf8");
+#endif
+	}
 	int Program::run(int argc, char **argv)
 	{
+		setLocale();
 #ifdef WIN32
-			auto command_line = po::split_winmain(ucsToUtf8(wstring(GetCommandLine())));
-			command_line.erase(command_line.begin());
+		auto command_line = po::split_winmain(ucsToUtf8(wstring(GetCommandLine())));
+		command_line.erase(command_line.begin());
 #else
-			vector<string> command_line;
-			command_line.resize(argc - 1);
-			for (int i = 1; i < argc; i++) {
-				command_line[i - 1] = argv[i];
-			}
+		vector<string> command_line;
+		command_line.resize(argc - 1);
+		for (int i = 1; i < argc; i++) {
+			command_line[i - 1] = argv[i];
+		}
 #endif
 		auto command_name = getCommandName(command_line);
 		if (!command_name.first) return EXIT_FAILURE;

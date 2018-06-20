@@ -113,6 +113,11 @@ namespace mcp2200
 		wstring_convert<codecvt_utf8_utf16<T>, T> convertor;
 		result = convertor.to_bytes(source);
 	}
+	wstring &trimToLength(wstring &source)
+	{
+		source.shrink_to_fit();
+		return source;
+	}
 	Command::Command()
 	{
 		memset(this, 0, sizeof(Command));
@@ -364,7 +369,7 @@ namespace mcp2200
 		wstring manufacturer_wide;
 		manufacturer_wide.resize(255);
 		hid_get_manufacturer_string(m_handle, const_cast<wchar_t*>(manufacturer_wide.c_str()), manufacturer_wide.length());
-		toUtf8(manufacturer_wide, manufacturer);
+		toUtf8(trimToLength(manufacturer_wide), manufacturer);
 		return true;
 	}
 	bool Device::getProduct(string &product)
@@ -373,7 +378,7 @@ namespace mcp2200
 		wstring product_wide;
 		product_wide.resize(255);
 		hid_get_product_string(m_handle, const_cast<wchar_t*>(product_wide.c_str()), product_wide.length());
-		toUtf8(product_wide, product);
+		toUtf8(trimToLength(product_wide), product);
 		return true;
 	}
 	bool Device::getSerial(string &serial)
@@ -382,7 +387,7 @@ namespace mcp2200
 		wstring serial_wide;
 		serial_wide.resize(255);
 		hid_get_serial_number_string(m_handle, const_cast<wchar_t*>(serial_wide.c_str()), serial_wide.length());
-		toUtf8(serial_wide, serial);
+		toUtf8(trimToLength(serial_wide), serial);
 		return true;
 	}
 	Device::Device():
