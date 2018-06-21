@@ -15,7 +15,7 @@ before_install:
 
 install:
   - docker exec -ti travis-ci bash -c "apt-get update"
-  - docker exec -ti travis-ci bash -c "apt-get install -y build-essential cmake linux-libc-dev git pkg-config libhidapi-dev libgtk-3-dev libudev-dev libjsoncpp-dev libboost-dev"
+  - docker exec -ti travis-ci bash -c "apt-get install -y build-essential cmake linux-libc-dev git pkg-config libhidapi-dev libgtk-3-dev libudev-dev libjsoncpp-dev libboost-system-dev libboost-program-options-dev libboost-filesystem-dev libboost-test-dev"
   - if [[ "$CXX" == "g++" ]]; then docker exec -ti travis-ci bash -c "apt-get install -y g++"; fi
   - if [[ "$CXX" == "clang++" ]]; then docker exec -ti travis-ci bash -c "apt-get install -y clang"; fi
 
