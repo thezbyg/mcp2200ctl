@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 #include <functional>
+#include <array>
 typedef struct hid_device_ hid_device;
 namespace mcp2200
 {
@@ -124,6 +125,7 @@ namespace mcp2200
 					}set_string;
 				};
 			}base_configure;
+			std::array<uint8_t, 15> data;
 		};
 		Command();
 		Command(const Command &command);

@@ -53,13 +53,13 @@ namespace command_line
 	{
 		return m_command_pattern.c_str();
 	}
-	void Command::addOptions(po::options_description &options, po::options_description &hidden_options)
+	void Command::addOptions(po::options_description &, po::options_description &)
 	{
 	}
-	void Command::addPositionalOptions(po::positional_options_description &positional_options)
+	void Command::addPositionalOptions(po::positional_options_description &)
 	{
 	}
-	bool Command::checkOptions(po::variables_map &variable_map)
+	bool Command::checkOptions(po::variables_map &)
 	{
 		return true;
 	}

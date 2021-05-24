@@ -82,19 +82,19 @@ namespace mapping
 		{
 			return type;
 		}
-		const size_t getOffset() const
+		size_t getOffset() const
 		{
 			return offset;
 		}
-		const size_t getCount() const
+		size_t getCount() const
 		{
 			return count;
 		}
-		const size_t getItemSize() const
+		size_t getItemSize() const
 		{
 			return item_size;
 		}
-		const bool isArray() const
+		bool isArray() const
 		{
 			return count > 1 && item_size != 0;
 		}

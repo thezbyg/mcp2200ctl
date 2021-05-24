@@ -189,7 +189,7 @@ namespace gui
 			gtk_widget_set_margin_top(widget, 5);
 			gtk_widget_set_margin_bottom(widget, 5);
 		}
-		void addColumn(GtkWidget *list, GtkListStore *store, const char *title, DeviceColumn column)
+		void addColumn(GtkWidget *list, GtkListStore *, const char *title, DeviceColumn column)
 		{
 			GtkTreeViewColumn *col = gtk_tree_view_column_new();
 			gtk_tree_view_column_set_title(col, title);
@@ -556,7 +556,7 @@ namespace gui
 			gtk_box_pack_start(GTK_BOX(vbox), grid, false, true, 10);
 			return grid;
 		}
-		int run(int argc, char **argv)
+		int run(int, char **)
 		{
 			gtk_init(nullptr, nullptr);
 			m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -771,7 +771,7 @@ namespace gui
 				};
 			}
 			while (!exit){
-				udev.read([this](const char *action, const char *devpath, const char *subsystem){
+				udev.read([this](const char *, const char *, const char *){
 					g_idle_add((GSourceFunc)&Impl::onUsbEvent, this);
 				});
 			}
@@ -786,10 +786,10 @@ namespace gui
 			app->showDevices();
 			return false;
 		}
-		static void onCursorChanged(GtkTreeView *list, Impl *app)
+		static void onCursorChanged(GtkTreeView *, Impl *)
 		{
 		}
-		static void onRowActivated(GtkTreeView *list, GtkTreePath *tree_path, GtkTreeViewColumn *column, Impl *app)
+		static void onRowActivated(GtkTreeView *list, GtkTreePath *tree_path, GtkTreeViewColumn *, Impl *app)
 		{
 			GtkTreeModel* model = gtk_tree_view_get_model(list);
 			GtkTreeIter iter;
