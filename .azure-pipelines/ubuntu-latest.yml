@@ -9,9 +9,13 @@ jobs:
       gcc:
         publish_prefix: gcc
         compiler: g++
+        CC: gcc
+        CXX: g++
       clang:
         publish_prefix: clang
         compiler: clang
+        CC: clang
+        CXX: clang++
   pool:
     vmImage: ubuntu-latest
   steps:
@@ -39,4 +43,3 @@ jobs:
     inputs:
       artifactName: $(publish_prefix)-ubuntu-latest
       pathToPublish: '$(Build.ArtifactStagingDirectory)'
-
