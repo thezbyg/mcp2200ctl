@@ -17,7 +17,7 @@ jobs:
   steps:
   - script: >
       sudo apt-get update && sudo apt-get install
-      $(compiler) git libgtk-3-dev libjsoncpp-dev libhidapi-dev libudev-dev libboost-filesystem-dev libboost-system-dev libboost-test-dev
+      $(compiler) git libgtk-3-dev libjsoncpp-dev libhidapi-dev libudev-dev libboost-filesystem-dev libboost-system-dev libboost-test-dev libboost-program-options-dev
   - task: CMake@1
     inputs:
       workingDirectory: 'build'
