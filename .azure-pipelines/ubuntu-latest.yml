@@ -1,0 +1,42 @@
+trigger:
+- master
+
+jobs:
+- job: build_on_ubuntu_latest
+  strategy:
+    maxParallel: 2
+    matrix:
+      gcc:
+        publish_prefix: gcc
+        compiler: g++
+      clang:
+        publish_prefix: clang
+        compiler: clang
+  pool:
+    vmImage: ubuntu-latest
+  steps:
+  - script: >
+      sudo apt-get update && sudo apt-get install
+      $(compiler) git libgtk-3-dev libjsoncpp-dev libhidapi-dev libudev-dev libboost-filesystem-dev libboost-system-dev libboost-test-dev
+  - task: CMake@1
+    inputs:
+      workingDirectory: 'build'
+      cmakeArgs: '-G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$(Build.ArtifactStagingDirectory)/ ..'
+  - script: |
+      cmake --build . --config Release
+    workingDirectory: 'build'
+  - script: |
+      ./build/tests --log_format=JUNIT --report_format=HRF -k tests-log.xml -e tests-report.txt --no_result_code
+    workingDirectory: ''
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: 'tests-*.xml'
+  - script: |
+      cmake --build . --config Release --target install
+    workingDirectory: 'build'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      artifactName: $(publish_prefix)-ubuntu-latest
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+
