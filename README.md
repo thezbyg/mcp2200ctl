@@ -1,6 +1,6 @@
 # mcp2200ctl - MCP2200 USB-to-UART serial converter control program.
 
-[![Build Status](https://travis-ci.org/thezbyg/mcp2200ctl.svg?branch=master)](https://travis-ci.org/thezbyg/mcp2200ctl)
+[![Build Status](https://dev.azure.com/thezbyg/mcp2200ctl/_apis/build/status/thezbyg.mcp2200ctl?branchName=master)](https://dev.azure.com/thezbyg/mcp2200ctl/_build/latest?definitionId=1&branchName=master)
 
 ## mcp2200ctl
 
