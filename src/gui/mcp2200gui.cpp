@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fstream>
 #include <sstream>
 using namespace std;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 namespace gui
 {
 	enum class DeviceColumn: int
@@ -93,7 +93,7 @@ namespace gui
 		fs::path getConfigurationPath()
 		{
 			auto config_path = paths::getConfigurationPath() / "mcp2200gui";
-			boost::system::error_code ec;
+			std::error_code ec;
 			if (!fs::exists(config_path, ec)){
 				fs::create_directory(config_path, ec);
 			}
@@ -115,8 +115,11 @@ namespace gui
 			}
 			ifstream file(config_path.string(), ifstream::binary);
 			if (file.is_open()){
-				Json::Reader json_reader;
-				json_reader.parse(file, m_configuration_json, false);
+				try {
+					file >> m_configuration_json;
+				} catch (const std::exception &e) {
+					m_configuration_json = Json::Value(Json::objectValue);
+				}
 				file.close();
 			}
 			reader.load(m_configuration_layout, m_configuration_json, &m_configuration);
@@ -138,8 +141,7 @@ namespace gui
 			writer.save(m_configuration_layout, &m_configuration, m_configuration_json);
 			ofstream file(config_path.string());
 			if (file.is_open()){
-				Json::StyledWriter styled_writer;
-				file << styled_writer.write(m_configuration_json);
+				file << m_configuration_json;
 				file.close();
 			}
 			return true;
@@ -189,7 +191,7 @@ namespace gui
 			gtk_widget_set_margin_top(widget, 5);
 			gtk_widget_set_margin_bottom(widget, 5);
 		}
-		void addColumn(GtkWidget *list, GtkListStore *store, const char *title, DeviceColumn column)
+		void addColumn(GtkWidget *list, GtkListStore *, const char *title, DeviceColumn column)
 		{
 			GtkTreeViewColumn *col = gtk_tree_view_column_new();
 			gtk_tree_view_column_set_title(col, title);
@@ -556,7 +558,7 @@ namespace gui
 			gtk_box_pack_start(GTK_BOX(vbox), grid, false, true, 10);
 			return grid;
 		}
-		int run(int argc, char **argv)
+		int run(int, char **)
 		{
 			gtk_init(nullptr, nullptr);
 			m_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
@@ -771,7 +773,7 @@ namespace gui
 				};
 			}
 			while (!exit){
-				udev.read([this](const char *action, const char *devpath, const char *subsystem){
+				udev.read([this](const char *, const char *, const char *){
 					g_idle_add((GSourceFunc)&Impl::onUsbEvent, this);
 				});
 			}
@@ -786,10 +788,10 @@ namespace gui
 			app->showDevices();
 			return false;
 		}
-		static void onCursorChanged(GtkTreeView *list, Impl *app)
+		static void onCursorChanged(GtkTreeView *, Impl *)
 		{
 		}
-		static void onRowActivated(GtkTreeView *list, GtkTreePath *tree_path, GtkTreeViewColumn *column, Impl *app)
+		static void onRowActivated(GtkTreeView *list, GtkTreePath *tree_path, GtkTreeViewColumn *, Impl *app)
 		{
 			GtkTreeModel* model = gtk_tree_view_get_model(list);
 			GtkTreeIter iter;

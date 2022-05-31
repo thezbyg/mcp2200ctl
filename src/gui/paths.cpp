@@ -1,20 +1,20 @@
 #include "paths.h"
 #include <vector>
-namespace fs = boost::filesystem;
-using namespace std;
+namespace fs = std::filesystem;
 #ifdef WIN32
 #include <windows.h>
 #include <shlobj.h>
 #include <string.h>
 #else
 #include <glib.h>
+#include <unistd.h>
 #endif
 namespace paths
 {
 #ifdef WIN32
-	boost::filesystem::path getProgramFile()
+	std::filesystem::path getProgramFile()
 	{
-		vector<wchar_t> path;
+		std::vector<wchar_t> path;
 		path.resize(1024);
 		DWORD result = GetModuleFileName(NULL, &path[0], static_cast<DWORD>(path.size()));
 		while (result == path.size()){
@@ -24,7 +24,7 @@ namespace paths
 		if (result == 0) throw std::runtime_error("GetModuleFileName() failed");
 		return fs::path(std::wstring(path.begin(), path.begin() + result));
 	}
-	boost::filesystem::path getConfigurationPath()
+	std::filesystem::path getConfigurationPath()
 	{
 		PWSTR path;
 		HRESULT result = SHGetKnownFolderPath(&FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &path);
@@ -36,31 +36,31 @@ namespace paths
 		return fs_path;
 	}
 #else
-	boost::filesystem::path getProgramFile()
+	std::filesystem::path getProgramFile()
 	{
-		vector<char> buffer;
+		std::vector<char> buffer;
 		buffer.resize(1024);
 		for (;;){
 			int nchars = readlink("/proc/self/exe", &buffer.front(), buffer.size());
 			if (nchars < 0) throw std::runtime_error("Reading /proc/self/exe failed");
 			if ((size_t)nchars < buffer.size()){
-				return fs::path(string(buffer.begin(), buffer.begin() + nchars));
+				return fs::path(std::string(buffer.begin(), buffer.begin() + nchars));
 			}
 			buffer.resize(buffer.size() * 2);
 		}
 		return fs::path();
 	}
-	boost::filesystem::path getConfigurationPath()
+	std::filesystem::path getConfigurationPath()
 	{
 		const char *path = g_get_user_config_dir();
-		return fs::path(string(path, path + strlen(path)));
+		return fs::path(std::string(path, path + strlen(path)));
 	}
 #endif
-	boost::filesystem::path getProgramPath()
+	std::filesystem::path getProgramPath()
 	{
 		return getProgramFile().remove_filename();
 	}
-	string getProgramPathString()
+	std::string getProgramPathString()
 	{
 		return getProgramPath().string();
 	}

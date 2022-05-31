@@ -32,7 +32,7 @@ using namespace std;
 namespace po = boost::program_options;
 namespace mcp2200
 {
-	void validate(boost::any &v, const std::vector<std::string> &values, LedMode *target, int)
+	void validate(boost::any &v, const std::vector<std::string> &values, LedMode *, int)
 	{
 		using namespace boost::program_options;
 		validators::check_first_occurrence(v);

@@ -4,7 +4,7 @@
 
 ## mcp2200ctl
 
-mcp2200ctl is a command-line program which allows controlling additional features found in MCP2200 USB-to-UART serial converter ([http://www.microchip.com/wwwproducts/en/MCP2200](http://www.microchip.com/wwwproducts/en/MCP2200)). 
+mcp2200ctl is a command-line program which allows controlling additional features found in MCP2200 USB-to-UART serial converter ([http://www.microchip.com/wwwproducts/en/MCP2200](http://www.microchip.com/wwwproducts/en/MCP2200)).
 
 mcp2200ctl has the following features:
 
@@ -82,30 +82,30 @@ EEPROM value: 12
 
 ### Compiler
 
-Some of C++11 features are required. Compilation is currently only tested on the following compilers:
+Some of C++17 features are required. Compilation is currently only tested on the following compilers:
 
- * gcc 5.4.1
- * gcc 6.2.0
- * clang 3.8
- * clang 3.9
+ * gcc 9.3
+ * gcc 10.2
+ * clang 10.0
+ * clang 11.0
 
 ### Build dependencies
 
-CMake 3.1 or newer ([https://cmake.org](https://cmake.org)).
+CMake 3.13 or newer ([https://cmake.org](https://cmake.org)).
 
 ### Dependencies
 
  * HIDAPI 0.7 or newer ([http://www.signal11.us/oss/hidapi](http://www.signal11.us/oss/hidapi)).
- * Boost 1.58 or newer ([http://www.boost.org](http://www.boost.org)).
+ * Boost 1.67 or newer ([http://www.boost.org](http://www.boost.org)).
  * Used boost libraries:
    * Program Options.
    * Test.
    * Filesystem.
 
- * Additinal graphical application dependencies:
+ * Additional graphical application dependencies:
    * GTK 3.21 or newer ([http://www.gtk.org/](http://www.gtk.org/)).
    * libudev 231 or newer ([https://www.freedesktop.org/wiki/Software/systemd/](https://www.freedesktop.org/wiki/Software/systemd/)).
-   * jsoncpp 1.7 or newer ([https://github.com/open-source-parsers/jsoncpp](https://github.com/open-source-parsers/jsoncpp)).
+   * jsoncpp 1.9.4 or newer ([https://github.com/open-source-parsers/jsoncpp](https://github.com/open-source-parsers/jsoncpp)).
 
 On Debian, and on Debian based Linux distributions, the following command can be used to get all of the build dependencies:
 

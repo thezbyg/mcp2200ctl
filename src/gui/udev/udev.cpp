@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <libudev.h>
+#include <cerrno>
 using namespace std;
 namespace gui
 {

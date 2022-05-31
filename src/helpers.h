@@ -82,7 +82,7 @@ namespace command_line
 		return 0;
 	}
 	template <typename T>
-	void validate(boost::any &v, const std::vector<std::string> &values, BitMap<T> *target, int)
+	void validate(boost::any &v, const std::vector<std::string> &values, BitMap<T> *, int)
 	{
 		using namespace boost::program_options;
 		validators::check_first_occurrence(v);
@@ -136,7 +136,7 @@ namespace command_line
 		return 0;
 	}
 	template <typename T>
-	void validate(boost::any &v, const std::vector<std::string> &values, HexOption<T> *target, int)
+	void validate(boost::any &v, const std::vector<std::string> &values, HexOption<T> *, int)
 	{
 		using namespace boost::program_options;
 		validators::check_first_occurrence(v);

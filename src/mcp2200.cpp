@@ -118,13 +118,15 @@ namespace mcp2200
 		source.shrink_to_fit();
 		return source;
 	}
-	Command::Command()
+	Command::Command():
+		command_type(0),
+		data{0}
 	{
-		memset(this, 0, sizeof(Command));
 	}
-	Command::Command(const Command &command)
+	Command::Command(const Command &command):
+		command_type(command.command_type),
+		data{command.data}
 	{
-		memcpy(this, &command, sizeof(Command));
 	}
 	Command &Command::setCommand(CommandType command_type)
 	{

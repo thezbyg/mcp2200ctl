@@ -26,14 +26,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace po = boost::program_options;
 namespace command_line
 {
-	void VendorProduct::addOptions(boost::program_options::options_description &options, boost::program_options::options_description &hidden_options)
+	void VendorProduct::addOptions(boost::program_options::options_description &options, boost::program_options::options_description &)
 	{
 		options.add_options()
 			("vendor,V", po::value<HexOption<uint16_t>>(&m_vendor_id)->default_value(HexOption<uint16_t>(0x04d8), "04d8"), "device vendor ID")
 			("product,P", po::value<HexOption<uint16_t>>(&m_product_id)->default_value(HexOption<uint16_t>(0x00df), "00df"), "device product ID")
 			;
 	}
-	bool VendorProduct::checkOptions(po::variables_map &variable_map)
+	bool VendorProduct::checkOptions(po::variables_map &)
 	{
 		return true;
 	}

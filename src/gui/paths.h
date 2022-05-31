@@ -24,13 +24,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef HEADER_PATHS_H_
 #define HEADER_PATHS_H_
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <string>
 namespace paths
 {
-	boost::filesystem::path getProgramFile();
-	boost::filesystem::path getProgramPath();
-	boost::filesystem::path getConfigurationPath();
+	std::filesystem::path getProgramFile();
+	std::filesystem::path getProgramPath();
+	std::filesystem::path getConfigurationPath();
 	std::string getProgramPathString();
 };
 #endif /* HEADER_PATHS_H_ */

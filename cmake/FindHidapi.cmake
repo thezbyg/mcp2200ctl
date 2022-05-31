@@ -5,6 +5,5 @@ find_package_handle_standard_args(Hidapi FOUND_VAR Hidapi_FOUND REQUIRED_VARS Hi
 if(Hidapi_FOUND)
 	set(Hidapi_LIBRARIES "${Hidapi_LIBRARY}")
 	set(Hidapi_INCLUDE_DIRS "${Hidapi_INCLUDE_DIR}")
-endif(Hidapi_FOUND)
-
+endif()
 mark_as_advanced(Hidapi_INCLUDE_DIR Hidapi_LIBRARY)
